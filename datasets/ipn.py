@@ -45,7 +45,7 @@ def get_default_image_loader():
 
 
 def video_loader(video_dir_path, frame_indices, modality, sample_duration, image_loader):
-    
+
     video = []
     if modality in ['RGB', 'flo', 'seg']:
         for i in frame_indices:
@@ -76,7 +76,7 @@ def video_loader(video_dir_path, frame_indices, modality, sample_duration, image
             else:
                 print(image_path, "------- Does not exist")
                 return video
-    
+
     return video
 
 def get_default_video_loader():
@@ -129,12 +129,10 @@ def make_dataset(root_path, annotation_path, subset, n_samples_for_each_video,
         if i % 1000 == 0:
             print('dataset loading [{}/{}]'.format(i, len(video_names)))
 
-        video_path = os.path.join(root_path, video_names[i])
-        
+        video_path = os.path.join(root_path, video_names[i][2:])
+
         if not os.path.exists(video_path):
             continue
-
-        
 
         begin_t = int(annotations[i]['start_frame'])
         end_t = int(annotations[i]['end_frame'])
@@ -229,11 +227,10 @@ class IPN(data.Dataset):
         if self.spatial_transform is not None:
             self.spatial_transform.randomize_parameters()
             clip = [self.spatial_transform(img) for img in clip]
-    
+
         im_dim = clip[0].size()[-2:]
         clip = torch.cat(clip, 0).view((self.sample_duration, -1) + im_dim).permute(1, 0, 2, 3)
-        
-     
+
         target = self.data[index]
         if self.target_transform is not None:
             target = self.target_transform(target)

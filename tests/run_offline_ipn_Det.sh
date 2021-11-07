@@ -2,15 +2,15 @@
 export CUDA_VISIBLE_DEVICES=0
 
 python offline_test.py \
-	--root_path /host/space0/gibran/\
-	--video_path dataset/HandGestures/IPN_dataset \
-	--annotation_path scripts/Real-time-GesRec/annotation_ipnGesture/ipnbinary.json \
-	--result_path scripts/Real-time-GesRec/results_ipn \
-	--resume_path scripts/Real-time-GesRec/report_ipn/ipnDet_sc8b64_resnetl-10_7540.pth \
+	--root_path /c/Users/min/ \
+	--video_path /d/datasets/HandGestures/IPN_dataset \
+	--annotation_path IPN-hand/annotation_ipnGesture/ipnbinary.json \
+	--result_path IPN-hand/results_ipn \
+	--resume_path IPN-hand/report_ipn/ipnDet_sc8b64_resnetl-10.pth \
     --store_name ipnDet_sc8b64 \
 	--modality RGB \
 	--dataset ipn \
-	--sample_duration 32 \
+	--sample_duration 8 \
     --model resnetl \
 	--model_depth 10 \
 	--resnet_shortcut A \
@@ -23,3 +23,6 @@ python offline_test.py \
     --no_train \
     --no_val \
     --test \
+	--no_cuda \
+	--n_threads 0 \
+	# --no_first_lay \

@@ -152,6 +152,43 @@ def generate_model(opt):
 
     else:
         print('ERROR no cuda')
+        if opt.modality in ['RGB', 'flo'] and opt.model != 'c3d':
+            print("[INFO]: RGB model is used for init model")
+            if opt.dataset != 'jester' and not opt.no_first_lay:
+                model = _modify_first_conv_layer(model,3,3) ##### Check models trained (3,7,
+                # 7) or (7,7,7)
+        elif opt.modality in ['RGB-D', 'RGB-flo', 'RGB-seg']:
+            print("[INFO]: Converting the pretrained model to RGB+D init model")
+            model = _construct_rgbdepth_model(model)
+            if opt.no_first_lay:
+                model = _modify_first_conv_layer(model,3,4) ##### Check models trained (3,7,
+                # 7) or (7,7,7)
+            print("[INFO]: Done. RGB-D model ready.")
+
+        # Check first kernel size
+        modules = list(model.modules())
+        first_conv_idx = list(filter(lambda x: isinstance(modules[x], nn.Conv3d),
+                                     list(range(len(modules)))))[0]
+
+        conv_layer = modules[first_conv_idx]
+        if conv_layer.kernel_size[0] > opt.sample_duration:
+            print("[INFO]: RGB model is used for init model")
+            model = _modify_first_conv_layer(model, int(opt.sample_duration / 2), 1)
+
+        if opt.model == 'c3d':# CHECK HERE
+            model.fc = nn.Linear(
+                model.fc[0].in_features, model.fc[0].out_features)
+            # model.module.fc = model.module.fc.cuda()
+        elif opt.model in  ['mobilenetv2', 'shufflenetv2']:
+            model.classifier = nn.Sequential(
+                nn.Dropout(0.9),
+                nn.Linear(model.classifier[1].in_features, opt.n_finetune_classes))
+            # model.module.classifier = model.module.classifier.cuda()
+        else:
+            model.fc = nn.Linear(model.fc.in_features,
+                                        opt.n_finetune_classes)
+            # model.module.fc = model.module.fc.cuda()
+        # parameters = get_fine_tuning_parameters(model, opt.ft_begin_index)
 
     return model, model.parameters()
 

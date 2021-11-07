@@ -118,7 +118,7 @@ test_loader = torch.utils.data.DataLoader(
             batch_size=test_batch,
             shuffle=False,
             num_workers=opt.n_threads,
-            pin_memory=True)
+            pin_memory=False)
 test_logger = Logger(os.path.join(opt.result_path, 'test-{}_{}.log'.format(opt.test_subset,opt.store_name)), 
     [ 'top1', 'top5', 'precision', 'recall', 'time', 'cm', 'class_names', 'y_true', 'y_pred'])
 
@@ -131,11 +131,16 @@ print("Total number of trainable parameters: ", pytorch_total_params)
 
 if opt.resume_path:
     print('loading checkpoint {}'.format(opt.resume_path))
-    checkpoint = torch.load(opt.resume_path)
+    checkpoint = torch.load(opt.resume_path, map_location=torch.device('cpu'))
     assert opt.arch == checkpoint['arch']
-
     opt.begin_epoch = checkpoint['epoch']
-    model.load_state_dict(checkpoint['state_dict'])
+
+    # model.load_state_dict(checkpoint['state_dict'])
+    new_state_dict = {}
+    for k, v in checkpoint['state_dict'].items():
+        name = k[7:]  # remove `module.`
+        new_state_dict[name] = v
+    model.load_state_dict(new_state_dict)
 
 
 #test.test(test_loader, model, opt, test_data.class_names)
@@ -159,7 +164,7 @@ inst_ids.append(-1)
 out_queue = []
 for i, (inputs, targets) in enumerate(test_loader):
     if not opt.no_cuda:
-        targets = targets.cuda(async=True)
+        targets = targets.cuda(non_blocking=True)
         inputs = inputs.cuda()
     #inputs = Variable(torch.squeeze(inputs), volatile=True)
     end_time = time.time()
@@ -168,7 +173,7 @@ for i, (inputs, targets) in enumerate(test_loader):
         targets = Variable(targets)
         outputs = model(inputs)
         if not opt.no_softmax_in_test:
-            outputs = F.softmax(outputs)
+            outputs = F.softmax(outputs, dim=1)
         recorder.append(outputs.data.cpu().numpy().copy())
     out_queue.append(outputs.cpu().numpy()[0].reshape(-1,))
 
